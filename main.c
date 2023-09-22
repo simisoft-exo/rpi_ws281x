@@ -433,7 +433,7 @@ int main(int argc, char *argv[])
           anim_ctx.direction *= -1;  // Reverse direction
         }
         // 15 frames /sec
-        usleep(1000000 / 100);
+        usleep(1000000 / 25);
     }
 
     if (clear_on_exit) {

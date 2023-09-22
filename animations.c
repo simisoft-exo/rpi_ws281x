@@ -78,13 +78,26 @@ void print_frame_as_table(int width, int height, cairo_surface_t *surface) {
             int index = lut_index(x, y, width);
 
             if (index != __) {
+               uint8_t r = (neopixel_color >> 16) & 0xFF;
+               uint8_t g = (neopixel_color >> 8) & 0xFF;
+               uint8_t b = neopixel_color & 0xFF;
+
+            // Scale down to fit into ANSI 6x6x6 cube
+               uint8_t scaled_r = r / 51;
+               uint8_t scaled_g = g / 51;
+               uint8_t scaled_b = b / 51;
+
+            // Convert to ANSI index
+               int ansi_index = 16 + (36 * scaled_r) + (6 * scaled_g) + scaled_b;
+
                 // Assuming hexadecimal output and 8 characters wide field
-                printf("%08X ", neopixel_color);
+                printf("\033[38;5;%dm%08X \033[0m", ansi_index, neopixel_color);
             } else {
                 // Print 8 spaces to align
                 printf("        ");
             }
         }
+        printf("\n");  // Newline after each row
         printf("\n");  // Newline after each row
     }
 }
@@ -94,7 +107,7 @@ void send_frame_to_neopixels(cairo_surface_t *surface, ws2811_t *ledstring) {
     int width = cairo_image_surface_get_width(surface);
     int height = cairo_image_surface_get_height(surface);
 
-    print_frame_as_table(width,height,surface);
+    /* print_frame_as_table(width,height,surface); */
 
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
