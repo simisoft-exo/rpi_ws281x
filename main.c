@@ -51,7 +51,7 @@ static char VERSION[] = "XX.YY.ZZ";
 #include "version.h"
 
 #include "ws2811.h"
-
+#include "animations.h"
 
 #define ARRAY_SIZE(stuff)       (sizeof(stuff) / sizeof(stuff[0]))
 
@@ -60,8 +60,8 @@ static char VERSION[] = "XX.YY.ZZ";
 #define GPIO_PIN                18
 #define DMA                     10
 //#define STRIP_TYPE            WS2811_STRIP_RGB		// WS2812/SK6812RGB integrated chip+leds
-#define STRIP_TYPE              WS2811_STRIP_GBR		// WS2812/SK6812RGB integrated chip+leds
-//#define STRIP_TYPE            SK6812_STRIP_RGBW		// SK6812RGBW (NOT SK6812RGB)
+/* #define STRIP_TYPE              WS2811_STRIP_GBR		// WS2812/SK6812RGB integrated chip+leds */
+#define STRIP_TYPE            SK6812_STRIP_RGBW		// SK6812RGBW (NOT SK6812RGB)
 
 #define WIDTH                   8
 #define HEIGHT                  8
@@ -211,6 +211,7 @@ void parseargs(int argc, char **argv, ws2811_t *ws2811)
 	int index;
 	int c;
 
+	ws2811->channel[0].count = LUT_H * LUT_W;
 	static struct option longopts[] =
 	{
 		{"help", no_argument, 0, 'h'},
@@ -219,8 +220,8 @@ void parseargs(int argc, char **argv, ws2811_t *ws2811)
 		{"invert", no_argument, 0, 'i'},
 		{"clear", no_argument, 0, 'c'},
 		{"strip", required_argument, 0, 's'},
-		{"height", required_argument, 0, 'y'},
-		{"width", required_argument, 0, 'x'},
+		/* {"height", required_argument, 0, 'y'}, */
+		/* {"width", required_argument, 0, 'x'}, */
 		{"version", no_argument, 0, 'v'},
 		{0, 0, 0, 0}
 	};
@@ -300,29 +301,29 @@ void parseargs(int argc, char **argv, ws2811_t *ws2811)
 			}
 			break;
 
-		case 'y':
-			if (optarg) {
-				height = atoi(optarg);
-				if (height > 0) {
-					ws2811->channel[0].count = height * width;
-				} else {
-					printf ("invalid height %d\n", height);
-					exit (-1);
-				}
-			}
-			break;
+		/* case 'y': */
+		/* 	if (optarg) { */
+		/* 		height = atoi(optarg); */
+		/* 		if (height > 0) { */
+		/* 			ws2811->channel[0].count = height * width; */
+		/* 		} else { */
+		/* 			printf ("invalid height %d\n", height); */
+		/* 			exit (-1); */
+		/* 		} */
+		/* 	} */
+		/* 	break; */
 
-		case 'x':
-			if (optarg) {
-				width = atoi(optarg);
-				if (width > 0) {
-					ws2811->channel[0].count = height * width;
-				} else {
-					printf ("invalid width %d\n", width);
-					exit (-1);
-				}
-			}
-			break;
+		/* case 'x': */
+		/* 	if (optarg) { */
+		/* 		width = atoi(optarg); */
+		/* 		if (width > 0) { */
+		/* 			ws2811->channel[0].count = height * width; */
+		/* 		} else { */
+		/* 			printf ("invalid width %d\n", width); */
+		/* 			exit (-1); */
+		/* 		} */
+		/* 	} */
+		/* 	break; */
 
 		case 's':
 			if (optarg) {
@@ -389,21 +390,50 @@ int main(int argc, char *argv[])
         fprintf(stderr, "ws2811_init failed: %s\n", ws2811_get_return_t_str(ret));
         return ret;
     }
+    // Create ellipse frames
+
+    int num_frames = 50*10;
+
+    AnimationContext anim_ctx = {
+      .frames = NULL,
+      .frame_count = 0,
+      .current_frame = 0,
+      .direction = 1
+    };
+
+    // Grow ellipse from 0.1 to 1.0 scale
+    for (int i = 0; i < num_frames / 2; i++) {
+        double scale_factor = 0.1 + (0.9 * i) / (num_frames / 2);
+        draw_ellipse_frame(&anim_ctx, scale_factor);
+    }
+
+    // Shrink ellipse from 1.0 back to 0.1 scale
+    for (int i = 0; i < num_frames / 2; i++) {
+        double scale_factor = 1.0 - (0.9 * i) / (num_frames / 2);
+        draw_ellipse_frame(&anim_ctx, scale_factor);
+    }
+
+    int direction = 1;
 
     while (running)
     {
-        matrix_raise();
-        matrix_bottom();
-        matrix_render();
+        // replace width and height with your actual dimensions
 
-        if ((ret = ws2811_render(&ledstring)) != WS2811_SUCCESS)
-        {
-            fprintf(stderr, "ws2811_render failed: %s\n", ws2811_get_return_t_str(ret));
-            break;
+        /* printf("sending frame: %d", anim_ctx.current_frame); */
+        send_frame_to_neopixels(anim_ctx.frames[anim_ctx.current_frame], &ledstring);
+        /* if ((ret = ws2811_render(&ledstring)) != WS2811_SUCCESS) */
+        /* { */
+        /*     fprintf(stderr, "ws2811_render failed: %s\n", ws2811_get_return_t_str(ret)); */
+        /*     break; */
+        /* } */
+
+        anim_ctx.current_frame += anim_ctx.direction;
+        /* printf("moved to frame: %d", anim_ctx.current_frame); */
+        if (anim_ctx.current_frame >= anim_ctx.frame_count - 1 || anim_ctx.current_frame <= 0) {
+          anim_ctx.direction *= -1;  // Reverse direction
         }
-
         // 15 frames /sec
-        usleep(1000000 / 15);
+        usleep(1000000 / 100);
     }
 
     if (clear_on_exit) {

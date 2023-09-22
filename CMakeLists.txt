@@ -19,6 +19,11 @@ set(CMAKE_C_STANDARD 11)
 set(LIB_TARGET ws2811)
 set(TEST_TARGET test)
 
+# Find Cairo
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(CAIRO REQUIRED cairo)
+
+
 set(LIB_PUBLIC_HEADERS
     ws2811.h
     rpihw.h
@@ -28,6 +33,7 @@ set(LIB_PUBLIC_HEADERS
     gpio.h
     mailbox.h
     pcm.h
+    animations.h
 )
 
 set(LIB_SOURCES
@@ -37,6 +43,7 @@ set(LIB_SOURCES
     pcm.c
     dma.c
     rpihw.c
+    animations.c
 )
 
 set(TEST_SOURCES
@@ -62,8 +69,9 @@ else()
     add_library(${LIB_TARGET} ${LIB_SOURCES})
 endif()
 
-target_link_libraries(${LIB_TARGET} m)
+target_link_libraries(${LIB_TARGET} m ${CAIRO_LIBRARIES})
 set_target_properties(${LIB_TARGET} PROPERTIES PUBLIC_HEADER "${LIB_PUBLIC_HEADERS}")
+target_include_directories(${LIB_TARGET} PRIVATE ${CAIRO_INCLUDE_DIRS})
 
 install(TARGETS ${LIB_TARGET}
     ARCHIVE DESTINATION ${DEST_LIB_DIR}
