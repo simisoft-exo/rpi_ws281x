@@ -19,6 +19,21 @@ const int LUT[LUT_LEN] = {
   __,__,__,53,__,52,__,51,__,__,__
  };
 
+void add_frame_to_animation_context(AnimationContext *ctx, cairo_surface_t *surface) {
+    // Increment the frame count
+    ++(ctx->frame_count);
+
+    // Resize the array of frames
+    ctx->frames = realloc(ctx->frames, ctx->frame_count * sizeof(cairo_surface_t*));
+    if (ctx->frames == NULL) {
+        // Handle memory allocation failure here
+        exit(1);
+    }
+
+    // Save the new surface pointer into the frames array
+    ctx->frames[ctx->frame_count - 1] = surface;
+}
+
 void draw_rotating_pie_chart_frame(AnimationContext *ctx, double rotation_angle) {
     const int width  = LUT_W;
     const int height = LUT_H;
@@ -59,10 +74,13 @@ void draw_rotating_pie_chart_frame(AnimationContext *ctx, double rotation_angle)
         angle_start = angle_end;
     }
 
+    // Draw a small black circle at the center
+    cairo_set_source_rgb(cr, 0, 0, 0);  // Black color
+    cairo_arc(cr, 0, 0, 1 / width, 0, 2 * PI);  // Circle with 1-pixel radius
+    cairo_fill(cr);
+
     // Save the surface to the dynamic array of frames
-    ++(ctx->frame_count);  // Increment the frame count
-    ctx->frames = realloc(ctx->frames, ctx->frame_count * sizeof(cairo_surface_t*));  // Resize the array
-    ctx->frames[ctx->frame_count - 1] = surface;  // Save the surface pointer
+    add_frame_to_animation_context(ctx, surface);
 
     // Clean up
     cairo_destroy(cr);
@@ -92,9 +110,7 @@ void draw_ellipse_frame(AnimationContext *ctx, double scale_factor) {
     cairo_fill(cr);
 
     // Save the surface to the dynamic array of frames
-    ++(ctx->frame_count);  // Increment the frame count
-    ctx->frames = realloc(ctx->frames, ctx->frame_count * sizeof(cairo_surface_t*));  // Resize the array
-    ctx->frames[ctx->frame_count - 1] = surface;  // Save the surface pointer
+    add_frame_to_animation_context(ctx, surface);
 
     // Clean up
     cairo_destroy(cr);
@@ -153,7 +169,7 @@ void print_frame_as_table(int width, int height, cairo_surface_t *surface) {
 
 void send_frame_to_neopixels(cairo_surface_t *surface, ws2811_t *ledstring) {
     unsigned char *data = cairo_image_surface_get_data(surface);
-    int width = cairo_image_surface_get_width(surface);
+    int width  = cairo_image_surface_get_width(surface);
     int height = cairo_image_surface_get_height(surface);
 
     print_frame_as_table(width,height,surface);
@@ -176,4 +192,96 @@ void send_frame_to_neopixels(cairo_surface_t *surface, ws2811_t *ledstring) {
     }
 
     ws2811_render(ledstring);
+}
+
+void make_rotating_frames(AnimationContext *ctx, int num_frames) {
+    double max_angle = 1.5 * PI; // Maximum rotation angle
+    double delta_angle = max_angle / (num_frames / 2); // Angle change per frame
+
+    // Rotate from 0 to max_angle
+    for (int i = 0; i < num_frames / 2; i++) {
+        double rotation_angle = i * delta_angle;
+        draw_rotating_pie_chart_frame(ctx, rotation_angle);
+    }
+
+    // Rotate back from max_angle to 0
+    for (int i = 0; i < num_frames / 2; i++) {
+        double rotation_angle = max_angle - i * delta_angle;
+        draw_rotating_pie_chart_frame(ctx, rotation_angle);
+    }
+}
+
+void make_growing_ellipse(AnimationContext *ctx, int num_frames) {
+    // Grow ellipse from 0.1 to 1.0 scale
+    for (int i = 0; i < num_frames / 2; i++) {
+        double scale_factor = 0.1 + (0.9 * i) / (num_frames / 2);
+        draw_ellipse_frame(ctx, scale_factor);
+    }
+
+    // Shrink ellipse from 1.0 back to 0.1 scale
+    for (int i = 0; i < num_frames / 2; i++) {
+        double scale_factor = 1.0 - (0.9 * i) / (num_frames / 2);
+        draw_ellipse_frame(ctx, scale_factor);
+    }
+}
+
+void smooth_interpolate_to_new_frames(AnimationContext *current_ctx, AnimationContext *new_ctx) {
+    // Assume 25 FPS, so 25 frames to interpolate
+    const int fps = 25;
+
+    // Get the current frame from the current context
+    cairo_surface_t *current_surface = current_ctx->frames[current_ctx->current_frame];
+
+    // Get the first frame from the new context
+    cairo_surface_t *target_surface = new_ctx->frames[0];
+
+    unsigned char *current_data = cairo_image_surface_get_data(current_surface);
+    unsigned char *target_data = cairo_image_surface_get_data(target_surface);
+
+    // Loop through each frame to perform the interpolation
+    for (int i = 1; i <= fps; i++) {
+        // Calculate the weight for interpolation
+        double weight = (double)i / fps;
+
+        // Create a new surface for the interpolated frame
+        cairo_surface_t *interpolated_surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, LUT_W, LUT_H);
+        cairo_t *cr = cairo_create(interpolated_surface);
+
+        unsigned char *interpolated_data = cairo_image_surface_get_data(interpolated_surface);
+
+        // Loop through each pixel of the interpolated frame
+        for (int y = 0; y < LUT_H; y++) {
+            for (int x = 0; x < LUT_W; x++) {
+                int offset = (y * LUT_W + x) * 4; // 4 bytes per pixel for ARGB
+                uint32_t current_color = *(uint32_t *)(current_data + offset);
+                uint32_t target_color = *(uint32_t *)(target_data + offset);
+
+                // Perform interpolation
+                uint32_t interpolated_color = weight * target_color + (1 - weight) * current_color;
+
+                // Set the interpolated color to the new cairo surface
+                *(uint32_t *)(interpolated_data + offset) = interpolated_color;
+            }
+        }
+
+        // Mark the surface as dirty as we have modified it at the pixel level
+        cairo_surface_mark_dirty(interpolated_surface);
+
+        // Save the interpolated frame
+        add_frame_to_animation_context(current_ctx, interpolated_surface);
+
+        // Cleanup
+        cairo_destroy(cr);
+    }
+}
+
+void clear_animation(AnimationContext *ctx) {
+    for (int i = 0; i < ctx->frame_count; i++) {
+        cairo_surface_destroy(ctx->frames[i]);
+    }
+    free(ctx->frames);
+    ctx->frames = NULL;
+    ctx->frame_count = 0;
+    ctx->current_frame = 0;
+    ctx->direction = 1;  // or whatever your initial direction is
 }

@@ -19,6 +19,12 @@ extern "C" {
 // LUT currently nased of prototype (2:1 ratio, skipping every other pixel)
 extern const int LUT[LUT_LEN];
 
+enum AnimationType {
+    GROWING_ELLIPSE,
+    ROTATING_FRAMES,
+    NONE  // Initially, no animation is set
+};
+
 typedef struct {
     cairo_surface_t **frames;
     int frame_count;
@@ -28,12 +34,19 @@ typedef struct {
 
 extern AnimationContext anim_ctx;
 
-// Utility function
+// Utility functions
 void send_frame_to_neopixels(cairo_surface_t *surface, ws2811_t *ledstring);
+void smooth_interpolate_to_new_frames(AnimationContext *current_ctx, AnimationContext *new_ctx);
+void clear_animation(AnimationContext *ctx);
 
-// Animation functions
+// Animation frame functions
 void draw_ellipse_frame(AnimationContext *ctx, double scale_factor);
 void draw_rotating_pie_chart_frame(AnimationContext *ctx, double rotation_angle);
+
+//Animation sequence functions
+void make_rotating_frames(AnimationContext *ctx, int num_frames);
+void make_growing_ellipse(AnimationContext *ctx, int num_frames);
+
 
 #ifdef __cplusplus
 }

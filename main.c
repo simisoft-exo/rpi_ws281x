@@ -53,6 +53,15 @@ static char VERSION[] = "XX.YY.ZZ";
 #include "ws2811.h"
 #include "animations.h"
 
+#include <time.h>
+#include <sys/time.h>
+
+
+long elapsed_seconds = 0;
+long last_switch = 0;
+int switch_interval = 5;  // Switch every 5 seconds
+
+
 #define ARRAY_SIZE(stuff)       (sizeof(stuff) / sizeof(stuff[0]))
 
 // defaults for cmdline options
@@ -377,6 +386,9 @@ int main(int argc, char *argv[])
 {
     ws2811_return_t ret;
 
+    struct timeval start_time, current_time;
+    gettimeofday(&start_time, NULL);
+
     sprintf(VERSION, "%d.%d.%d", VERSION_MAJOR, VERSION_MINOR, VERSION_MICRO);
 
     parseargs(argc, argv, &ledstring);
@@ -394,64 +406,78 @@ int main(int argc, char *argv[])
 
     int num_frames = 50*10;
 
-    AnimationContext anim_ctx = {
+    AnimationContext current_animation = {
       .frames = NULL,
       .frame_count = 0,
       .current_frame = 0,
       .direction = 1
     };
-/*
-    // Grow ellipse from 0.1 to 1.0 scale
-    for (int i = 0; i < num_frames / 2; i++) {
-        double scale_factor = 0.1 + (0.9 * i) / (num_frames / 2);
-        draw_ellipse_frame(&anim_ctx, scale_factor);
-    }
 
-    // Shrink ellipse from 1.0 back to 0.1 scale
-    for (int i = 0; i < num_frames / 2; i++) {
-        double scale_factor = 1.0 - (0.9 * i) / (num_frames / 2);
-        draw_ellipse_frame(&anim_ctx, scale_factor);
-    }
-*/
+    AnimationContext next_animation = {
+      .frames = NULL,
+      .frame_count = 0,
+      .current_frame = 0,
+      .direction = 1
+    };
 
-    double max_angle = 1.5 * PI; // Maximum rotation angle
-    double delta_angle = max_angle / (num_frames / 2); // Angle change per frame
-
-    // Rotate from 0 to max_angle
-    for (int i = 0; i < num_frames / 2; i++) {
-        double rotation_angle = i * delta_angle;
-        draw_rotating_pie_chart_frame(&anim_ctx, rotation_angle);
-    }
-
-    // Rotate back from max_angle to 0
-    for (int i = 0; i < num_frames / 2; i++) {
-        double rotation_angle = max_angle - i * delta_angle;
-        draw_rotating_pie_chart_frame(&anim_ctx, rotation_angle);
-    }
 
     int direction = 1;
 
+    enum AnimationType current_animation_type = GROWING_ELLIPSE;
+    enum AnimationType next_animation_type = ROTATING_FRAMES;  // Start with this animation
+
+    make_growing_ellipse(&current_animation, num_frames);
+    /* make_rotating_frames(&current_animation, num_frames); */
+
     while (running)
     {
-        // replace width and height with your actual dimensions
+        gettimeofday(&current_time, NULL);
+        elapsed_seconds = current_time.tv_sec - start_time.tv_sec;
 
-        /* printf("sending frame: %d", anim_ctx.current_frame); */
-        send_frame_to_neopixels(anim_ctx.frames[anim_ctx.current_frame], &ledstring);
-        /* if ((ret = ws2811_render(&ledstring)) != WS2811_SUCCESS) */
-        /* { */
-        /*     fprintf(stderr, "ws2811_render failed: %s\n", ws2811_get_return_t_str(ret)); */
-        /*     break; */
-        /* } */
-
-        anim_ctx.current_frame += anim_ctx.direction;
-        /* printf("moved to frame: %d", anim_ctx.current_frame); */
-        if (anim_ctx.current_frame >= anim_ctx.frame_count - 1 || anim_ctx.current_frame <= 0) {
-          anim_ctx.direction *= -1;  // Reverse direction
+        send_frame_to_neopixels(current_animation.frames[current_animation.current_frame], &ledstring);
+        if ((ret = ws2811_render(&ledstring)) != WS2811_SUCCESS)
+        {
+            fprintf(stderr, "ws2811_render failed: %s\n", ws2811_get_return_t_str(ret));
+            break;
         }
-        // 15 frames /sec
-        usleep(1000000 / 50);
-    }
 
+        current_animation.current_frame += current_animation.direction;
+        /* printf("moved to frame: %d", current_animation.current_frame); */
+        if (current_animation.current_frame >= current_animation.frame_count - 1 || current_animation.current_frame <= 0) {
+          current_animation.direction *= -1;  // Reverse direction
+        }
+
+        // Check if 5 seconds have passed
+        if (elapsed_seconds - last_switch >= switch_interval) {
+          last_switch = elapsed_seconds;
+          printf("5 seconds: current- %d  next- %d\n", current_animation_type, next_animation_type);
+
+        // Clear or initialize current_animation before running these functions
+        // Optionally use smooth transition functions here
+
+          if (next_animation_type != current_animation_type) {
+            clear_animation(&current_animation);
+            switch (next_animation_type) {
+                case GROWING_ELLIPSE:
+                    make_growing_ellipse(&current_animation, num_frames);
+                    next_animation_type = ROTATING_FRAMES;
+                    break;
+
+                case ROTATING_FRAMES:
+                    make_rotating_frames(&current_animation, num_frames);
+                    next_animation_type = GROWING_ELLIPSE;
+                    break;
+
+                default:
+                    break;
+            }
+            current_animation_type = next_animation_type;  // Update the current animation type
+          }
+        }
+
+    // 50 frames /sec
+    usleep(1000000 / 50);
+    }
     if (clear_on_exit) {
 	matrix_clear();
 	matrix_render();
