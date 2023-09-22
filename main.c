@@ -400,7 +400,7 @@ int main(int argc, char *argv[])
       .current_frame = 0,
       .direction = 1
     };
-
+/*
     // Grow ellipse from 0.1 to 1.0 scale
     for (int i = 0; i < num_frames / 2; i++) {
         double scale_factor = 0.1 + (0.9 * i) / (num_frames / 2);
@@ -411,6 +411,22 @@ int main(int argc, char *argv[])
     for (int i = 0; i < num_frames / 2; i++) {
         double scale_factor = 1.0 - (0.9 * i) / (num_frames / 2);
         draw_ellipse_frame(&anim_ctx, scale_factor);
+    }
+*/
+
+    double max_angle = 1.5 * PI; // Maximum rotation angle
+    double delta_angle = max_angle / (num_frames / 2); // Angle change per frame
+
+    // Rotate from 0 to max_angle
+    for (int i = 0; i < num_frames / 2; i++) {
+        double rotation_angle = i * delta_angle;
+        draw_rotating_pie_chart_frame(&anim_ctx, rotation_angle);
+    }
+
+    // Rotate back from max_angle to 0
+    for (int i = 0; i < num_frames / 2; i++) {
+        double rotation_angle = max_angle - i * delta_angle;
+        draw_rotating_pie_chart_frame(&anim_ctx, rotation_angle);
     }
 
     int direction = 1;
@@ -433,7 +449,7 @@ int main(int argc, char *argv[])
           anim_ctx.direction *= -1;  // Reverse direction
         }
         // 15 frames /sec
-        usleep(1000000 / 25);
+        usleep(1000000 / 50);
     }
 
     if (clear_on_exit) {

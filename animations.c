@@ -29,9 +29,9 @@ void draw_rotating_pie_chart_frame(AnimationContext *ctx, double rotation_angle)
     cairo_set_source_rgb(cr, 0, 0, 0);
     cairo_paint(cr);
 
-    /* cairo_scale(cr, width , height / HEX_HEIGHT_RATIO); */
     // Move to the center of the image
     cairo_translate(cr, width / 2.0, height / 2.0);
+    cairo_scale(cr, width , height / HEX_HEIGHT_RATIO);
 
     double angle_start = 0; // start angle in radians
     double angle_end = 0; // end angle in radians
@@ -43,7 +43,7 @@ void draw_rotating_pie_chart_frame(AnimationContext *ctx, double rotation_angle)
         cairo_rotate(cr, rotation_angle);
 
         // Set the color for this slice
-        cairo_set_source_rgb(cr, i%2, 1, i%2+1);
+        cairo_set_source_rgb(cr, (i== 0 || i == 2), (i == 1 || i == 3 || i == 5), (i == 2 || i == 4));
 
         angle_end += slice_angle;
 
