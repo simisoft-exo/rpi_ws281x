@@ -9,9 +9,7 @@
 extern "C" {
 #endif
 
-
-//Stuff here
-
+#define PI 3.14159265358979323846
 #define HEX_HEIGHT_RATIO 0.8128988125
 // full canvas dimensions
 #define LUT_W 11
@@ -29,10 +27,13 @@ typedef struct {
 } AnimationContext;
 
 extern AnimationContext anim_ctx;
-uint32_t convert_argb_to_neopixel(uint32_t argb);
+
+// Utility function
 void send_frame_to_neopixels(cairo_surface_t *surface, ws2811_t *ledstring);
+
+// Animation functions
 void draw_ellipse_frame(AnimationContext *ctx, double scale_factor);
-void draw_hexagon_frame(AnimationContext *ctx, double scale_factor);
+void draw_rotating_pie_chart_frame(AnimationContext *ctx, double rotation_angle);
 
 #ifdef __cplusplus
 }

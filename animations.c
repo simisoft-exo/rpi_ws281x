@@ -19,6 +19,55 @@ const int LUT[LUT_LEN] = {
   __,__,__,53,__,52,__,51,__,__,__
  };
 
+void draw_rotating_pie_chart_frame(AnimationContext *ctx, double rotation_angle) {
+    const int width  = LUT_W;
+    const int height = LUT_H;
+    cairo_surface_t *surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
+    cairo_t *cr = cairo_create(surface);
+
+    // Clear the background with black
+    cairo_set_source_rgb(cr, 0, 0, 0);
+    cairo_paint(cr);
+
+    /* cairo_scale(cr, width , height / HEX_HEIGHT_RATIO); */
+    // Move to the center of the image
+    cairo_translate(cr, width / 2.0, height / 2.0);
+
+    double angle_start = 0; // start angle in radians
+    double angle_end = 0; // end angle in radians
+    double slice_angle = 2 * PI / 6; // assuming 6 slices
+    double radius = fmin(width, height) * 1.0;  // Adjust the size of the pie chart
+
+    for (int i = 0; i < 6; i++) { // assuming 6 slices
+        // Rotate the canvas by the rotation angle
+        cairo_rotate(cr, rotation_angle);
+
+        // Set the color for this slice
+        cairo_set_source_rgb(cr, i%2, 1, i%2+1);
+
+        angle_end += slice_angle;
+
+        // Draw the slice
+        cairo_move_to(cr, 0, 0);
+        cairo_arc(cr, 0, 0, radius, angle_start, angle_end);
+        cairo_line_to(cr, 0, 0);
+        cairo_fill(cr);
+
+        // Rotate the canvas back by the negative of the rotation angle
+        cairo_rotate(cr, -rotation_angle);
+
+        angle_start = angle_end;
+    }
+
+    // Save the surface to the dynamic array of frames
+    ++(ctx->frame_count);  // Increment the frame count
+    ctx->frames = realloc(ctx->frames, ctx->frame_count * sizeof(cairo_surface_t*));  // Resize the array
+    ctx->frames[ctx->frame_count - 1] = surface;  // Save the surface pointer
+
+    // Clean up
+    cairo_destroy(cr);
+}
+
 void draw_ellipse_frame(AnimationContext *ctx, double scale_factor) {
     const int width = LUT_W;
     const int height = LUT_H;
@@ -39,7 +88,7 @@ void draw_ellipse_frame(AnimationContext *ctx, double scale_factor) {
     cairo_scale(cr, scale_factor * width , scale_factor * height / HEX_HEIGHT_RATIO);
 
     // Draw the ellipse
-    cairo_arc(cr, 0, 0, 1, 0, 2 * 3.14159);
+    cairo_arc(cr, 0, 0, 1, 0, 2 * PI);
     cairo_fill(cr);
 
     // Save the surface to the dynamic array of frames
@@ -107,7 +156,7 @@ void send_frame_to_neopixels(cairo_surface_t *surface, ws2811_t *ledstring) {
     int width = cairo_image_surface_get_width(surface);
     int height = cairo_image_surface_get_height(surface);
 
-    /* print_frame_as_table(width,height,surface); */
+    print_frame_as_table(width,height,surface);
 
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
