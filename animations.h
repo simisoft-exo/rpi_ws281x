@@ -36,7 +36,7 @@ extern AnimationContext anim_ctx;
 
 // Utility functions
 void send_frame_to_neopixels(cairo_surface_t *surface, ws2811_t *ledstring);
-void smooth_interpolate_to_new_frames(AnimationContext *current_ctx, AnimationContext *new_ctx, AnimationContext *transition_ctx, const int fps = 25);
+void smooth_interpolate_to_new_frames(AnimationContext *current_ctx, AnimationContext *new_ctx, AnimationContext *transition_ctx, int fps = 25);
 void clear_animation(AnimationContext *ctx);
 
 // Animation frame functions

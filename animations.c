@@ -229,7 +229,22 @@ void smooth_interpolate_to_new_frames(
     AnimationContext *current_ctx,
     AnimationContext *new_ctx,
     AnimationContext *transition_ctx,
-    const int fps = 25) {
+    fps = 25) {
+
+ // Deallocate any dynamically allocated resources in transition_ctx
+   if (transition_ctx->frames != NULL) {
+      for (int i = 0; i < transition_ctx->frame_count; ++i) {
+        if (transition_ctx->frames[i] != NULL) {
+            cairo_surface_destroy(transition_ctx->frames[i]);  // Replace with your specific deallocation function
+        }
+      }
+      free(transition_ctx->frames);  // Use free() since realloc was used for allocation
+    }
+    // Zero out all the properties of transition_ctx
+    transition_ctx->frames = NULL;
+    transition_ctx->frame_count = 0;
+    transition_ctx->current_frame = 0;
+    transition_ctx->direction = 1;
 
     // Get the current frame from the current context
     cairo_surface_t *current_surface = current_ctx->frames[current_ctx->current_frame];
