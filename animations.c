@@ -225,9 +225,11 @@ void make_growing_ellipse(AnimationContext *ctx, int num_frames) {
     }
 }
 
-void smooth_interpolate_to_new_frames(AnimationContext *current_ctx, AnimationContext *new_ctx) {
-    // Assume 25 FPS, so 25 frames to interpolate
-    const int fps = 25;
+void smooth_interpolate_to_new_frames(
+    AnimationContext *current_ctx,
+    AnimationContext *new_ctx,
+    AnimationContext *transition_ctx,
+    const int fps = 25) {
 
     // Get the current frame from the current context
     cairo_surface_t *current_surface = current_ctx->frames[current_ctx->current_frame];
@@ -268,7 +270,7 @@ void smooth_interpolate_to_new_frames(AnimationContext *current_ctx, AnimationCo
         cairo_surface_mark_dirty(interpolated_surface);
 
         // Save the interpolated frame
-        add_frame_to_animation_context(current_ctx, interpolated_surface);
+        add_frame_to_animation_context(transition_ctx, interpolated_surface);
 
         // Cleanup
         cairo_destroy(cr);
