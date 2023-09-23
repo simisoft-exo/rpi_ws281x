@@ -100,8 +100,8 @@ void draw_side_wave_frame(AnimationContext *ctx, double wave_length, double up_o
     cairo_rotate(cr, 30 * (PI / 180));  // Rotate 30 degrees
 
     // Initialize the wave variables
-    double amplitude = 10;  // Amplitude of the wave
-    double frequency = 2 * PI / wave_length;  // Frequency based on wave_length
+    double amplitude = 1;  // Amplitude of the wave
+    double frequency = 0.5 * PI / wave_length;  // Frequency based on wave_length
     double phase = up_or_down;  // Phase shift based on up_or_down
 
     // Array of colors (RGBA) for the bands
@@ -120,9 +120,9 @@ void draw_side_wave_frame(AnimationContext *ctx, double wave_length, double up_o
         cairo_set_source_rgba(cr, colors[band][0], colors[band][1], colors[band][2], colors[band][3]);
 
         // Create the path for the wave in this band
-        cairo_move_to(cr, -LUT_W / 2.0, band * 20);
+        cairo_move_to(cr, -LUT_W / 2.0, band * 2);
         for (double x = -LUT_W / 2.0; x < LUT_W / 2.0; x += 1) {
-            double y = band * 20 + amplitude * sin(frequency * x + phase);
+            double y = band * 2 + amplitude * sin(frequency * x + phase);
             cairo_line_to(cr, x, y);
         }
         cairo_stroke(cr);  // Draw the wave
