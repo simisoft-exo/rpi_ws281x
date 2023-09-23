@@ -240,11 +240,6 @@ void smooth_interpolate_to_new_frames(
       }
       free(transition_ctx->frames);  // Use free() since realloc was used for allocation
     }
-    // Zero out all the properties of transition_ctx
-    transition_ctx->frames = NULL;
-    transition_ctx->frame_count = 0;
-    transition_ctx->current_frame = 0;
-    transition_ctx->direction = 1;
 
     // Get the current frame from the current context
     cairo_surface_t *current_surface = current_ctx->frames[current_ctx->current_frame];
