@@ -315,20 +315,37 @@ void smooth_interpolate_to_new_frames(
 
         unsigned char *interpolated_data = cairo_image_surface_get_data(interpolated_surface);
 
-        // Loop through each pixel of the interpolated frame
         for (int y = 0; y < LUT_H; y++) {
             for (int x = 0; x < LUT_W; x++) {
                 int offset = (y * LUT_W + x) * 4; // 4 bytes per pixel for ARGB
-                uint32_t current_color = *(uint32_t *)(current_data + offset);
-                uint32_t target_color = *(uint32_t *)(target_data + offset);
 
-                // Perform interpolation
-                uint32_t interpolated_color = weight * target_color + (1 - weight) * current_color;
+                unsigned char *current_pixel = current_data + offset;
+                unsigned char *target_pixel = target_data + offset;
+
+                unsigned char current_a = current_pixel[3];
+                unsigned char current_r = current_pixel[2];
+                unsigned char current_g = current_pixel[1];
+                unsigned char current_b = current_pixel[0];
+
+                unsigned char target_a = target_pixel[3];
+                unsigned char target_r = target_pixel[2];
+                unsigned char target_g = target_pixel[1];
+                unsigned char target_b = target_pixel[0];
+
+                // Interpolate each channel individually
+                unsigned char interpolated_a = (unsigned char)(weight * target_a + (1 - weight) * current_a);
+                unsigned char interpolated_r = (unsigned char)(weight * target_r + (1 - weight) * current_r);
+                unsigned char interpolated_g = (unsigned char)(weight * target_g + (1 - weight) * current_g);
+                unsigned char interpolated_b = (unsigned char)(weight * target_b + (1 - weight) * current_b);
+
+                // Combine interpolated channels back into a single 32-bit ARGB color
+                uint32_t interpolated_color = (interpolated_a << 24) | (interpolated_r << 16) | (interpolated_g << 8) | interpolated_b;
 
                 // Set the interpolated color to the new cairo surface
                 *(uint32_t *)(interpolated_data + offset) = interpolated_color;
             }
         }
+
 
         // Mark the surface as dirty as we have modified it at the pixel level
         cairo_surface_mark_dirty(interpolated_surface);
