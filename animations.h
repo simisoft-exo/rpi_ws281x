@@ -51,7 +51,6 @@ void draw_random_dots_frame(AnimationContext *ctx);
 void make_rotating_frames(AnimationContext *ctx, int num_frames);
 void make_growing_ellipse(AnimationContext *ctx, int num_frames);
 void make_side_waves(AnimationContext *ctx, int num_frames);
-void make_random_dots(AnimationContext *ctx, int num_frames);
 
 #ifdef __cplusplus
 }

@@ -274,7 +274,7 @@ void make_growing_ellipse(AnimationContext *ctx, int num_frames) {
     }
 }
 
-void make_moving_side_wave(AnimationContext *ctx, int num_frames) {
+void make_side_waves(AnimationContext *ctx, int num_frames) {
     // Increase wave_length from 1 to 100 over num_frames / 2
     // Change direction at halfway point
     double wave_length_min = 1.0;
