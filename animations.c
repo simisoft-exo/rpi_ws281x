@@ -313,8 +313,8 @@ void smooth_interpolate_to_new_frames(
         cairo_surface_t *interpolated_surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, LUT_W, LUT_H);
         cairo_t *cr = cairo_create(interpolated_surface);
 
+        cairo_surface_flush(interpolated_surface);
         unsigned char *interpolated_data = cairo_image_surface_get_data(interpolated_surface);
-
         // Loop through each pixel of the interpolated frame
         for (int y = 0; y < LUT_H; y++) {
             for (int x = 0; x < LUT_W; x++) {
@@ -335,7 +335,7 @@ void smooth_interpolate_to_new_frames(
 
         // Save the interpolated frame
         add_frame_to_animation_context(transition_ctx, interpolated_surface);
-
+        print_frame_as_table(LUT_W,LUT_H,interpolated_surface)
         // Cleanup
         cairo_destroy(cr);
     }
