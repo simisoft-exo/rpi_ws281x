@@ -44,7 +44,7 @@ void clear_animation(AnimationContext *ctx);
 void draw_ellipse_frame(AnimationContext *ctx, double scale_factor);
 void draw_rotating_pie_chart_frame(AnimationContext *ctx, double rotation_angle);
 
-void draw_side_wave_frame(AnimationContext *ctx, double wave_length);
+void draw_side_wave_frame(AnimationContext *ctx, double wave_length, double up_or_down);
 void draw_random_dots_frame(AnimationContext *ctx);
 
 //Animation sequence functions
