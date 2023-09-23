@@ -239,6 +239,7 @@ void smooth_interpolate_to_new_frames(
     // Get the first frame from the new context
     cairo_surface_t *target_surface = new_ctx->frames[0];
 
+    printf("getting current and target data\n");
     unsigned char *current_data = cairo_image_surface_get_data(current_surface);
     unsigned char *target_data = cairo_image_surface_get_data(target_surface);
 
@@ -251,6 +252,7 @@ void smooth_interpolate_to_new_frames(
         cairo_surface_t *interpolated_surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, LUT_W, LUT_H);
         cairo_t *cr = cairo_create(interpolated_surface);
 
+        printf("getting interpolated data for frame %d\n", i);
         unsigned char *interpolated_data = cairo_image_surface_get_data(interpolated_surface);
 
         // Loop through each pixel of the interpolated frame
