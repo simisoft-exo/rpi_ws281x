@@ -277,15 +277,11 @@ void make_growing_ellipse(AnimationContext *ctx, int num_frames) {
 void make_side_waves(AnimationContext *ctx, int num_frames) {
     // Increase wave_length from 1 to 100 over num_frames / 2
     // Change direction at halfway point
-    double wave_length_min = 1.0;
-    double wave_length_max = 100.0;
+    double wave_length_min = -50.0;
+    double wave_length_max = 50.0;
     double direction = 1.0;
 
     for (int i = 0; i < num_frames; ++i) {
-        if (i == num_frames / 2) {
-            direction = -1.0; // Change direction at halfway point
-        }
-
         double wave_length = wave_length_min + ((wave_length_max - wave_length_min) * i) / (num_frames - 1);
         draw_side_wave_frame(ctx, wave_length, direction);
     }
