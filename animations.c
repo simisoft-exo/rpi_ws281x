@@ -229,7 +229,7 @@ void smooth_interpolate_to_new_frames(
     AnimationContext *current_ctx,
     AnimationContext *new_ctx,
     AnimationContext *transition_ctx,
-    fps = 25) {
+    int fps) {
 
  // Deallocate any dynamically allocated resources in transition_ctx
    if (transition_ctx->frames != NULL) {
