@@ -22,6 +22,7 @@ extern const int LUT[LUT_LEN];
 enum AnimationType {
     GROWING_ELLIPSE,
     ROTATING_FRAMES,
+    SIDE_WAVE,
     NONE  // Initially, no animation is set
 };
 
