@@ -221,7 +221,7 @@ void send_frame_to_neopixels(cairo_surface_t *surface, ws2811_t *ledstring) {
     int width  = cairo_image_surface_get_width(surface);
     int height = cairo_image_surface_get_height(surface);
 
-    /* print_frame_as_table(width,height,surface); */
+    print_frame_as_table(width,height,surface);
 
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
@@ -298,8 +298,8 @@ void smooth_interpolate_to_new_frames(
     // Get the current frame from the current context
     cairo_surface_t *current_surface = current_ctx->frames[current_ctx->current_frame];
 
-    // Get the first frame from the new context
-    cairo_surface_t *target_surface = new_ctx->frames[0];
+    // Get the current frame from the new context (current frame might not be first if animation changed)
+    cairo_surface_t *target_surface = new_ctx->frames[new_ctx->current_frame];
 
     unsigned char *current_data = cairo_image_surface_get_data(current_surface);
     unsigned char *target_data = cairo_image_surface_get_data(target_surface);
@@ -353,7 +353,6 @@ void smooth_interpolate_to_new_frames(
 
         // Save the interpolated frame
         add_frame_to_animation_context(transition_ctx, interpolated_surface);
-        print_frame_as_table(LUT_W,LUT_H,interpolated_surface)
         // Cleanup
         cairo_destroy(cr);
     }
