@@ -22,7 +22,7 @@ extern const int LUT[LUT_LEN];
 enum AnimationType {
     GROWING_ELLIPSE,
     ROTATING_FRAMES,
-    SIDE_WAVE,
+    SURFACE_SPECTRUM,
     NONE  // Initially, no animation is set
 };
 
@@ -45,11 +45,13 @@ void draw_ellipse_frame(AnimationContext *ctx, double scale_factor);
 void draw_rotating_pie_chart_frame(AnimationContext *ctx, double rotation_angle);
 
 void draw_side_wave_frame(AnimationContext *ctx, double wave_length, double up_or_down);
+void draw_full_color_frame(AnimationContext *ctx, int r, int g, int b);
 
 //Animation sequence functions
 void make_rotating_frames(AnimationContext *ctx, int num_frames);
 void make_growing_ellipse(AnimationContext *ctx, int num_frames);
 void make_side_waves(AnimationContext *ctx, int num_frames);
+void make_color_spectrum(AnimationContext *ctx, int num_frames);
 
 #ifdef __cplusplus
 }

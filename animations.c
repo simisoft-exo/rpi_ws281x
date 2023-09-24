@@ -358,6 +358,42 @@ void smooth_interpolate_to_new_frames(
     }
 }
 
+void make_color_spectrum(AnimationContext *ctx, int num_frames) {
+    for (int i = 0; i < num_frames; i++) {
+        // Calculate the progress through the spectrum
+        double progress = (double)i / num_frames;
+
+        // Calculate r, g, b values based on progress.
+        // This is a simplified example; you can use more complex color calculations.
+        int r = (int)(sin(progress * 2 * M_PI + 0) * 127.5 + 127.5);
+        int g = (int)(sin(progress * 2 * M_PI + 2) * 127.5 + 127.5);
+        int b = (int)(sin(progress * 2 * M_PI + 4) * 127.5 + 127.5);
+
+        // Draw the frame
+        draw_full_color_frame(ctx, r, g, b);
+    }
+}
+
+void draw_full_color_frame(AnimationContext *ctx, int r, int g, int b) {
+    // Create a new Cairo surface for the frame
+    cairo_surface_t *surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, LUT_W, LUT_H);
+    cairo_t *cr = cairo_create(surface);
+
+    // Set the color
+    cairo_set_source_rgb(cr, r / 255.0, g / 255.0, b / 255.0);  // Cairo expects color components to be in [0, 1]
+
+    // Draw a rectangle to fill the entire surface
+    cairo_rectangle(cr, 0, 0, LUT_W, LUT_H);
+    cairo_fill(cr);
+
+    // Add this frame to the animation context
+    add_frame_to_animation_context(ctx, surface);
+
+    // Clean up
+    cairo_destroy(cr);
+}
+
+
 void clear_animation(AnimationContext *ctx) {
     for (int i = 0; i < ctx->frame_count; i++) {
         cairo_surface_destroy(ctx->frames[i]);
