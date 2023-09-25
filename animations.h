@@ -23,12 +23,14 @@ enum AnimationType {
     GROWING_ELLIPSE,
     ROTATING_FRAMES,
     SURFACE_SPECTRUM,
+    RANDOM,
     NONE  // Initially, no animation is set
 };
 
 typedef struct {
     cairo_surface_t **frames;
     int frame_count;
+    int max_frames;
     int current_frame;
     int direction;
 } AnimationContext;
@@ -39,6 +41,13 @@ extern AnimationContext anim_ctx;
 void send_frame_to_neopixels(cairo_surface_t *surface, ws2811_t *ledstring);
 void smooth_interpolate_to_new_frames(AnimationContext *current_ctx, AnimationContext *new_ctx, AnimationContext *transition_ctx, int fps);
 void clear_animation(AnimationContext *ctx);
+void insert_frame_to_animation_context_at(AnimationContext *ctx, cairo_surface_t *frame, int index);
+
+void smooth_interpolate_between_frames(
+    cairo_surface_t *first_frame,
+    cairo_surface_t *second_frame,
+    AnimationContext *ctx,
+    int fps);
 
 // Animation frame functions
 void draw_ellipse_frame(AnimationContext *ctx, double scale_factor);
@@ -46,12 +55,15 @@ void draw_rotating_pie_chart_frame(AnimationContext *ctx, double rotation_angle)
 
 void draw_side_wave_frame(AnimationContext *ctx, double wave_length, double up_or_down);
 void draw_full_color_frame(AnimationContext *ctx, int r, int g, int b);
+void draw_random_color_frame(AnimationContext *ctx);
+
 
 //Animation sequence functions
 void make_rotating_frames(AnimationContext *ctx, int num_frames);
 void make_growing_ellipse(AnimationContext *ctx, int num_frames);
 void make_side_waves(AnimationContext *ctx, int num_frames);
 void make_color_spectrum(AnimationContext *ctx, int num_frames);
+void make_random_color_sequence(AnimationContext *ctx, int num_frames, int fps);
 
 #ifdef __cplusplus
 }

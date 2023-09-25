@@ -393,6 +393,144 @@ void draw_full_color_frame(AnimationContext *ctx, int r, int g, int b) {
     cairo_destroy(cr);
 }
 
+void draw_random_color_frame(AnimationContext *ctx) {
+    // Create a new surface
+    cairo_surface_t *surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, LUT_W, LUT_H);
+    cairo_surface_flush(surface);
+    unsigned char *data = cairo_image_surface_get_data(surface);
+
+    // Loop over each pixel
+    for (int y = 0; y < LUT_H; y++) {
+        for (int x = 0; x < LUT_W; x++) {
+            // Generate random colors in the range [0, 255]
+            int r = rand() % 256;
+            int g = rand() % 256;
+            int b = rand() % 256;
+
+            // Apply the first rule: If all are greater than 0.5, set the smallest to 0
+            if (r > 127 && g > 127 && b > 127) {
+                if (r <= g && r <= b) r = 0;
+                else if (g <= r && g <= b) g = 0;
+                else b = 0;
+            }
+
+            // Apply the second rule: if all are close to each other, modify accordingly
+            if (abs(r - g) < 50 && abs(r - b) < 50 && abs(g - b) < 50) {
+                if (r <= g && r <= b) r = 0;
+                else if (g <= r && g <= b) g = 0;
+                else b = 0;
+
+                if (r >= g && r >= b) r = 255;
+                else if (g >= r && g >= b) g = 255;
+                else b = 255;
+            }
+
+            // Compute the pixel offset
+            int offset = (y * LUT_W + x) * 4; // 4 bytes per pixel for ARGB
+
+            data[offset] = b;       // Blue channel
+            data[offset + 1] = g;   // Green channel
+            data[offset + 2] = r;   // Red channel
+            data[offset + 3] = 255; // Alpha channel (fully opaque)
+        }
+    }
+
+    // Mark the surface as dirty after manually changing pixels
+    cairo_surface_mark_dirty(surface);
+
+    // Add this frame to the context
+    add_frame_to_animation_context(ctx, surface);
+
+}
+
+void smooth_interpolate_between_frames(
+    cairo_surface_t *first_frame,
+    cairo_surface_t *second_frame,
+    AnimationContext *ctx,
+    int fps) {
+
+    // Get data for the first and second frames
+    unsigned char *first_data = cairo_image_surface_get_data(first_frame);
+    unsigned char *second_data = cairo_image_surface_get_data(second_frame);
+
+    // Loop through each frame to perform the interpolation
+    for (int i = 1; i <= fps; i++) {
+        // Calculate the weight for interpolation
+        double weight = (double)i / fps;
+
+        // Create a new surface for the interpolated frame
+        cairo_surface_t *interpolated_surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, LUT_W, LUT_H);
+        cairo_t *cr = cairo_create(interpolated_surface);
+
+        cairo_surface_flush(interpolated_surface);
+        unsigned char *interpolated_data = cairo_image_surface_get_data(interpolated_surface);
+
+        for (int y = 0; y < LUT_H; y++) {
+            for (int x = 0; x < LUT_W; x++) {
+                int offset = (y * LUT_W + x) * 4; // 4 bytes per pixel for ARGB
+
+                unsigned char *first_pixel = first_data + offset;
+                unsigned char *second_pixel = second_data + offset;
+
+                unsigned char first_a = first_pixel[3];
+                unsigned char first_r = first_pixel[2];
+                unsigned char first_g = first_pixel[1];
+                unsigned char first_b = first_pixel[0];
+
+                unsigned char second_a = second_pixel[3];
+                unsigned char second_r = second_pixel[2];
+                unsigned char second_g = second_pixel[1];
+                unsigned char second_b = second_pixel[0];
+
+                // Interpolate each channel individually
+                unsigned char interpolated_a = (unsigned char)(weight * second_a + (1 - weight) * first_a);
+                unsigned char interpolated_r = (unsigned char)(weight * second_r + (1 - weight) * first_r);
+                unsigned char interpolated_g = (unsigned char)(weight * second_g + (1 - weight) * first_g);
+                unsigned char interpolated_b = (unsigned char)(weight * second_b + (1 - weight) * first_b);
+
+                // Combine interpolated channels back into a single 32-bit ARGB color
+                uint32_t interpolated_color = (interpolated_a << 24) | (interpolated_r << 16) | (interpolated_g << 8) | interpolated_b;
+
+                // Set the interpolated color to the new cairo surface
+                *(uint32_t *)(interpolated_data + offset) = interpolated_color;
+            }
+        }
+
+        // Mark the surface as dirty as we have modified it at the pixel level
+        cairo_surface_mark_dirty(interpolated_surface);
+
+        // Save the interpolated frame
+        add_frame_to_animation_context(ctx, interpolated_surface);
+        // Cleanup
+        cairo_destroy(cr);
+    }
+}
+
+
+void make_random_color_sequence(AnimationContext *ctx, int num_frames, int fps) {
+    if (num_frames < 2) {
+        // Not enough frames for interpolation
+        return;
+    }
+
+    // Generate the first random frame
+    draw_random_color_frame(ctx);
+
+    for (int i = 1; i < num_frames; ++i) {
+        // Generate the next random frame
+        draw_random_color_frame(ctx);
+
+        // Get the last two frames (the ones we just drew)
+        cairo_surface_t *prev_surface = ctx->frames[ctx->frame_count - 2];
+        cairo_surface_t *current_surface = ctx->frames[ctx->frame_count - 1];
+
+        // Interpolate between these frames and add them to the context
+        smooth_interpolate_between_frames(prev_surface, current_surface, ctx, fps);
+
+        // At this point, the interpolated frames are added right after the two original frames in the context.
+        // Therefore, the next iteration will correctly pick the newly added frame as the "previous" one for further interpolations.
+    }
+}
 
 void clear_animation(AnimationContext *ctx) {
     for (int i = 0; i < ctx->frame_count; i++) {
