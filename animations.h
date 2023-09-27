@@ -53,7 +53,6 @@ void smooth_interpolate_between_frames(
 void draw_ellipse_frame(AnimationContext *ctx, double scale_factor);
 void draw_rotating_pie_chart_frame(AnimationContext *ctx, double rotation_angle);
 
-void draw_side_wave_frame(AnimationContext *ctx, double wave_length, double up_or_down);
 void draw_full_color_frame(AnimationContext *ctx, int r, int g, int b);
 void draw_random_color_frame(AnimationContext *ctx);
 
@@ -61,7 +60,6 @@ void draw_random_color_frame(AnimationContext *ctx);
 //Animation sequence functions
 void make_rotating_frames(AnimationContext *ctx, int num_frames);
 void make_growing_ellipse(AnimationContext *ctx, int num_frames);
-void make_side_waves(AnimationContext *ctx, int num_frames);
 void make_color_spectrum(AnimationContext *ctx, int num_frames);
 void make_random_color_sequence(AnimationContext *ctx, int num_frames, int fps);
 

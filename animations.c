@@ -86,55 +86,6 @@ void draw_rotating_pie_chart_frame(AnimationContext *ctx, double rotation_angle)
     cairo_destroy(cr);
 }
 
-void draw_side_wave_frame(AnimationContext *ctx, double wave_length, double up_or_down) {
-    // Create a new Cairo surface and Cairo context (cr)
-    cairo_surface_t *surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, LUT_W, LUT_H);
-    cairo_t *cr = cairo_create(surface);
-
-    // Clear the background
-    cairo_set_source_rgba(cr, 0, 0, 0, 1);
-    cairo_paint(cr);
-
-    // Translate and rotate the canvas
-    cairo_translate(cr, LUT_W / 2.0, LUT_H / 2.0);  // Center the drawing
-    cairo_rotate(cr, 30 * (PI / 180));  // Rotate 30 degrees
-
-    // Initialize the wave variables
-    double amplitude = 1;  // Amplitude of the wave
-    double frequency = 0.5 * PI / wave_length;  // Frequency based on wave_length
-    double phase = up_or_down;  // Phase shift based on up_or_down
-
-    // Array of colors (RGBA) for the bands
-    double colors[][4] = {
-        {1, 0, 0, 1},
-        {0, 1, 0, 1},
-        {0, 0, 1, 1},
-        {1, 1, 0, 1},
-        {1, 0, 1, 1},
-    };
-
-    // Draw parallel bands with wave
-    int num_bands = 5;
-    for (int band = 0; band < num_bands; ++band) {
-        // Set the drawing color for this band
-        cairo_set_source_rgba(cr, colors[band][0], colors[band][1], colors[band][2], colors[band][3]);
-
-        // Create the path for the wave in this band
-        cairo_move_to(cr, -LUT_W / 2.0, band * 2);
-        for (double x = -LUT_W / 2.0; x < LUT_W / 2.0; x += 1) {
-            double y = band * 2 + amplitude * sin(frequency * x + phase);
-            cairo_line_to(cr, x, y);
-        }
-        cairo_stroke(cr);  // Draw the wave
-    }
-
-    // Save the frame
-    add_frame_to_animation_context(ctx, surface);
-
-    // Cleanup
-    cairo_destroy(cr);
-}
-
 void draw_ellipse_frame(AnimationContext *ctx, double scale_factor) {
     const int width = LUT_W;
     const int height = LUT_H;
@@ -271,19 +222,6 @@ void make_growing_ellipse(AnimationContext *ctx, int num_frames) {
     for (int i = 0; i < num_frames / 2; i++) {
         double scale_factor = 1.0 - (0.9 * i) / (num_frames / 2);
         draw_ellipse_frame(ctx, scale_factor);
-    }
-}
-
-void make_side_waves(AnimationContext *ctx, int num_frames) {
-    // Increase wave_length from 1 to 100 over num_frames / 2
-    // Change direction at halfway point
-    double wave_length_min = -50.0;
-    double wave_length_max = 50.0;
-    double direction = 1.0;
-
-    for (int i = 0; i < num_frames; ++i) {
-        double wave_length = wave_length_min + ((wave_length_max - wave_length_min) * i) / (num_frames - 1);
-        draw_side_wave_frame(ctx, wave_length, direction);
     }
 }
 
