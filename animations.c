@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <time.h>
 
 const int LUT[LUT_LEN] = {
   __,__,__, 0,__, 1,__, 2,__,__,__,
@@ -488,13 +489,13 @@ cairo_surface_t* create_random_color_frame() {
     return surface;
 }
 
-
 void make_random_color_sequence(AnimationContext *ctx, int num_frames, int fps) {
     if (num_frames < 2) {
         // Not enough frames for interpolation
         return;
     }
 
+    srand(time(NULL));
     // Generate the first random frame
     draw_random_color_frame(ctx);
 
